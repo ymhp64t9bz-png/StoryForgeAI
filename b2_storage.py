@@ -127,4 +127,3 @@ def list_files(prefix: str = "") -> list:
     except Exception as e:
         logger.error(f"❌ Erro ao listar arquivos B2: {e}")
         return []
-
