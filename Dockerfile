@@ -8,6 +8,7 @@ LABEL maintainer="StoryForge AI Team"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV IMAGEMAGICK_BINARY=/usr/bin/convert
+ENV PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -29,17 +30,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
 
 # 🐍 2. DEPENDÊNCIAS PYTHON
-COPY requirements.txt .
+COPY requirements.txt /app/requirements.txt
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install --no-cache-dir -r requirements.txt
+    python3 -m pip install --no-cache-dir -r /app/requirements.txt
 
-# 📥 3. CÓDIGO FONTE
-COPY handler.py .
-COPY b2_storage.py .
+# 📥 3. CÓDIGO FONTE (Copia tudo da pasta atual para /app)
+COPY . /app/
 
 # Cria estrutura de pastas
-RUN mkdir -p /app/output
+RUN mkdir -p /app/output /app/temp
 
 # 🚀 ENTRYPOINT
-CMD [ "python3", "-u", "handler.py" ]
-
+# Usa caminho absoluto para garantir
+CMD [ "python3", "-u", "/app/handler.py" ]
