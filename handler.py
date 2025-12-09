@@ -1,6 +1,7 @@
 """
 🔥 StoryForge AI - Handler de Produção (RunPod Serverless)
-Pipeline: Topic -> Math Script -> Edge TTS (Async) -> MoviePy Video
+Pipeline: Topic -> Math Script -> Edge TTS (Async + Fallback gTTS) -> MoviePy Video
+Versão: 100% Async Native
 """
 
 import runpod
@@ -10,6 +11,7 @@ import logging
 import time
 import random
 import edge_tts
+from gtts import gTTS  # Fallback de segurança
 
 # Imports de Mídia
 from moviepy.editor import (
@@ -31,7 +33,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # ---------------------------------------------------------------------------- #
 
 def generate_script_logic(topic, duration_seconds):
-    """Gera roteiro respeitando a duração (2.5 palavras/segundo)."""
+    """Gera roteiro (Síncrono/CPU Bound)."""
     target_words = int(duration_seconds * 2.5)
     logger.info(f"📝 Topic: {topic} | Duração: {duration_seconds}s | Alvo: {target_words} palavras")
     
@@ -52,28 +54,45 @@ def generate_script_logic(topic, duration_seconds):
 
 async def generate_voice_pure_async(text, voice):
     """
-    Gera áudio MP3 usando Edge TTS de forma puramente assíncrona.
-    Adequado para handlers async como o do RunPod.
+    Gera áudio MP3. Tenta Edge TTS primeiro, cai para gTTS se falhar (403/Block).
     """
     filename = f"audio_{int(time.time())}_{random.randint(1000,9999)}.mp3"
     filepath = os.path.join(OUTPUT_DIR, filename)
     
-    communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(filepath)
-    
-    logger.info(f"🎙️ Áudio salvo: {filepath}")
+    try:
+        logger.info(f"🎙️ Tentando Edge TTS ({voice})...")
+        communicate = edge_tts.Communicate(text, voice)
+        await communicate.save(filepath)
+        logger.info("✅ Edge TTS gerou o áudio com sucesso.")
+        
+    except Exception as e:
+        logger.warning(f"⚠️ Edge TTS falhou ({e}). Tentando fallback gTTS...")
+        try:
+            # Fallback para Google TTS (Síncrono)
+            # Como é uma exceção, rodar síncrono aqui é aceitável para salvar o job
+            tts = gTTS(text=text, lang='pt')
+            tts.save(filepath)
+            logger.info("✅ Fallback gTTS gerou o áudio com sucesso.")
+        except Exception as e_ft:
+            logger.error(f"❌ Falha total no áudio: {e_ft}")
+            raise e_ft
+            
     return filepath
 
 def generate_video_render(audio_path, topic):
-    """Renderiza MP4 com fundo e legendas (CPU Bound)."""
+    """Renderiza MP4 (Síncrono/CPU Bound)."""
     logger.info("🎬 Renderizando vídeo...")
     filename = f"video_{int(time.time())}_{random.randint(1000,9999)}.mp4"
     output_path = os.path.join(OUTPUT_DIR, filename)
     
+    # Valida áudio
+    if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
+        raise ValueError("Arquivo de áudio inválido ou vazio")
+
     audio = AudioFileClip(audio_path)
     dur = audio.duration
     
-    bg = ColorClip(size=(1080, 1920), color=(10, 20, 40), duration=dur)
+    bg = ColorClip(size=(1080, 1920), color=(15, 20, 25), duration=dur)
     
     try:
         font_name = 'DejaVu-Sans-Bold'
@@ -98,7 +117,7 @@ def generate_video_render(audio_path, topic):
         audio_codec='aac',
         preset='ultrafast',
         threads=4,
-        logger=None
+        logger=None # Reduz logs
     )
     
     return output_path
@@ -109,9 +128,7 @@ def generate_video_render(audio_path, topic):
 
 async def handler(job):
     """
-    Handler ASSÍNCRONO nativo.
-    Usa 'await' diretamente para IO-bound tasks.
-    NÃO usa threads nem asyncio.run().
+    Handler 100% Async Native + Fallback Robustness.
     """
     job_input = job.get("input", {})
     
@@ -122,28 +139,13 @@ async def handler(job):
     try:
         logger.info(f"🚀 Job Start: {topic}")
         
-        # 1. Roteiro (Síncrono/CPU)
+        # 1. Roteiro (CPU)
         script = generate_script_logic(topic, duration)
         
-        # 2. Voz (Assíncrono/IO - await direto)
+        # 2. Voz (Async + Fallback)
         audio_path = await generate_voice_pure_async(script, voice)
         
-        # 3. Vídeo (Síncrono/CPU)
+        # 3. Vídeo (CPU)
         video_path = generate_video_render(audio_path, topic)
         
         return {
-            "status": "success",
-            "video_path": video_path,
-            "metadata": {
-                "script_length": len(script.split()),
-                "duration": duration,
-                "voice": voice
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Erro Fatal: {e}")
-        return {"status": "error", "error": str(e)}
-
-if __name__ == "__main__":
-    runpod.serverless.start({"handler": handler})
