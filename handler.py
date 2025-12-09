@@ -149,3 +149,16 @@ async def handler(job):
         video_path = generate_video_render(audio_path, topic)
         
         return {
+            "status": "success",
+            "video_path": video_path,
+            "script_length": len(script.split()),
+            "duration": duration,
+            "voice_used": "gTTS" if "Edge TTS falhou" in str(asyncio.all_tasks) else "Edge"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Erro Fatal no Job: {e}")
+        return {"status": "error", "error": str(e)}
+
+if __name__ == "__main__":
+    runpod.serverless.start({"handler": handler})
