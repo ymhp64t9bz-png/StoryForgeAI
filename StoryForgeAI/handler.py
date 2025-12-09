@@ -77,7 +77,6 @@ def generate_video_render(audio_path, topic):
     bg = ColorClip(size=(1080, 1920), color=(10, 20, 40), duration=dur)
     
     # 3. Cria Texto (Título)
-    # Tenta usar uma fonte padrão do Linux se DejaVu não estiver
     try:
         font_name = 'DejaVu-Sans-Bold'
     except:
@@ -101,7 +100,7 @@ def generate_video_render(audio_path, topic):
         fps=24, 
         codec='libx264', 
         audio_codec='aac',
-        preset='ultrafast', # Rápido para serverless
+        preset='ultrafast',
         threads=4,
         logger=None
     )
@@ -112,7 +111,11 @@ def generate_video_render(audio_path, topic):
 #                                RUNPOD HANDLER                                #
 # ---------------------------------------------------------------------------- #
 
-def handler(job):
+async def handler(job):
+    """
+    Handler ASSÍNCRONO nativo para evitar erros de loop.
+    RunPod suporta 'async def handler(job)'.
+    """
     job_input = job.get("input", {})
     
     topic = job_input.get("topic", "Tecnologia")
@@ -122,20 +125,15 @@ def handler(job):
     try:
         logger.info(f"🚀 Job Start: {topic}")
         
-        # 1. Roteiro
+        # 1. Roteiro (CPU Bound)
         script = generate_script_logic(topic, duration)
         
-        # 2. Voz
-        audio_path = asyncio.run(generate_voice_async(script, voice))
+        # 2. Voz (IO Bound - Async await direto)
+        # Não usamos asyncio.run() aqui, usamos await pois já estamos em loop
+        audio_path = await generate_voice_async(script, voice)
         
-        # 3. Vídeo
+        # 3. Vídeo (CPU Bound)
         video_path = generate_video_render(audio_path, topic)
-        
-        # 4. Retorno
-        # Em produção, você faria upload para S3 aqui. 
-        # No RunPod serverless, podemos retornar video_path se volume de rede estiver montado,
-        # ou retornar string base64 se for pequeno (não recomendado para vídeo).
-        # Aqui retornamos o path local indicando sucesso.
         
         return {
             "status": "success",
