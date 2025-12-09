@@ -1,6 +1,6 @@
 """
 🔥 StoryForge AI - Handler de Produção (RunPod Serverless)
-Pipeline: Topic -> Math Script -> Edge TTS (Async + Fallback gTTS) -> MoviePy Video
+Pipeline: Topic -> Math Script -> Edge TTS (Async + Fallback gTTS) -> MoviePy Video -> B2 Upload
 Versão: 100% Async Native
 """
 
@@ -11,7 +11,8 @@ import logging
 import time
 import random
 import edge_tts
-from gtts import gTTS  # Fallback de segurança
+from gtts import gTTS
+import b2_storage  # Módulo B2 Local
 
 # Imports de Mídia
 from moviepy.editor import (
@@ -19,7 +20,7 @@ from moviepy.editor import (
 )
 from moviepy.config import change_settings
 
-# Configurações Críticas para Docker
+# Configurações
 change_settings({"IMAGEMAGICK_BINARY": "/usr/bin/convert"})
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("StoryForge-Cloud")
@@ -53,9 +54,7 @@ def generate_script_logic(topic, duration_seconds):
     return final_text
 
 async def generate_voice_pure_async(text, voice):
-    """
-    Gera áudio MP3. Tenta Edge TTS primeiro, cai para gTTS se falhar (403/Block).
-    """
+    """Gera áudio MP3 (Edge TTS -> gTTS)."""
     filename = f"audio_{int(time.time())}_{random.randint(1000,9999)}.mp3"
     filepath = os.path.join(OUTPUT_DIR, filename)
     
@@ -63,16 +62,11 @@ async def generate_voice_pure_async(text, voice):
         logger.info(f"🎙️ Tentando Edge TTS ({voice})...")
         communicate = edge_tts.Communicate(text, voice)
         await communicate.save(filepath)
-        logger.info("✅ Edge TTS gerou o áudio com sucesso.")
-        
     except Exception as e:
         logger.warning(f"⚠️ Edge TTS falhou ({e}). Tentando fallback gTTS...")
         try:
-            # Fallback para Google TTS (Síncrono)
-            # Como é uma exceção, rodar síncrono aqui é aceitável para salvar o job
             tts = gTTS(text=text, lang='pt')
             tts.save(filepath)
-            logger.info("✅ Fallback gTTS gerou o áudio com sucesso.")
         except Exception as e_ft:
             logger.error(f"❌ Falha total no áudio: {e_ft}")
             raise e_ft
@@ -82,12 +76,11 @@ async def generate_voice_pure_async(text, voice):
 def generate_video_render(audio_path, topic):
     """Renderiza MP4 (Síncrono/CPU Bound)."""
     logger.info("🎬 Renderizando vídeo...")
-    filename = f"video_{int(time.time())}_{random.randint(1000,9999)}.mp4"
+    filename = f"storyforge_{int(time.time())}_{random.randint(1000,9999)}.mp4"
     output_path = os.path.join(OUTPUT_DIR, filename)
     
-    # Valida áudio
-    if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
-        raise ValueError("Arquivo de áudio inválido ou vazio")
+    if not os.path.exists(audio_path):
+        raise ValueError("Arquivo de áudio não encontrado")
 
     audio = AudioFileClip(audio_path)
     dur = audio.duration
@@ -117,7 +110,7 @@ def generate_video_render(audio_path, topic):
         audio_codec='aac',
         preset='ultrafast',
         threads=4,
-        logger=None # Reduz logs
+        logger=None
     )
     
     return output_path
@@ -128,7 +121,7 @@ def generate_video_render(audio_path, topic):
 
 async def handler(job):
     """
-    Handler 100% Async Native + Fallback Robustness.
+    Handler com Upload B2 Integrado.
     """
     job_input = job.get("input", {})
     
@@ -139,22 +132,39 @@ async def handler(job):
     try:
         logger.info(f"🚀 Job Start: {topic}")
         
-        # 1. Roteiro (CPU)
+        # 1. Pipeline de Geração
         script = generate_script_logic(topic, duration)
-        
-        # 2. Voz (Async + Fallback)
         audio_path = await generate_voice_pure_async(script, voice)
-        
-        # 3. Vídeo (CPU)
         video_path = generate_video_render(audio_path, topic)
         
-        return {
+        # 2. Upload para B2 (Seguro)
+        logger.info("☁️ Iniciando Upload Seguro para B2...")
+        file_name = f"storyforge/{os.path.basename(video_path)}"
+        
+        # Upload
+        uploaded_key = b2_storage.upload_file(video_path, file_name)
+        
+        response_payload = {
             "status": "success",
-            "video_path": video_path,
-            "script_length": len(script.split()),
-            "duration": duration,
-            "voice_used": "gTTS" if "Edge TTS falhou" in str(asyncio.all_tasks) else "Edge"
+            "script_word_count": len(script.split()),
+            "duration": duration
         }
+
+        if uploaded_key:
+            # Gerar Signed URL para acesso imediato (opcional, válido por 1h)
+            signed_url = b2_storage.generate_signed_download_url(uploaded_key, expires_in=3600)
+            
+            response_payload["b2_key"] = uploaded_key
+            response_payload["signed_url"] = signed_url
+            response_payload["video_path"] = signed_url # Para compatibilidade com frontend antigo
+            
+            logger.info(f"✅ B2 Upload Sucesso: {uploaded_key}")
+        else:
+            # Fallback: Retorna path local (se volume tiver montado)
+            logger.warning("⚠️ B2 Upload falhou. Retornando path local.")
+            response_payload["video_path"] = video_path
+
+        return response_payload
         
     except Exception as e:
         logger.error(f"❌ Erro Fatal no Job: {e}")
