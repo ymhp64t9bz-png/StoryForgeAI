@@ -1,173 +1,141 @@
 """
-🔥 StoryForge AI - Handler de Produção (RunPod Serverless)
-Pipeline: Topic -> Math Script -> Edge TTS (Async + Fallback gTTS) -> MoviePy Video -> B2 Upload
-Versão: 100% Async Native
+✂️ AnimeCut Cloud - Handler de Produção
+Pipeline: Download -> Detecção de Cenas (ContentDetector) -> Filtro Viral -> Upload B2
 """
 
 import runpod
 import os
-import asyncio
 import logging
-import time
-import random
-import edge_tts
-from gtts import gTTS
-import b2_storage  # Módulo B2 Local
+import requests
+import uuid
+import b2_storage
+from scenedetect import VideoManager, SceneManager
+from scenedetect.detectors import ContentDetector
+from moviepy.editor import VideoFileClip
 
-# Imports de Mídia
-from moviepy.editor import (
-    AudioFileClip, TextClip, ColorClip, CompositeVideoClip
-)
-from moviepy.config import change_settings
-
-# Configurações
-change_settings({"IMAGEMAGICK_BINARY": "/usr/bin/convert"})
+# Configuração
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("StoryForge-Cloud")
+logger = logging.getLogger("AnimeCut-Cloud")
 
-# Diretórios
 OUTPUT_DIR = "/app/output"
+TEMP_DIR = "/app/temp"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
 
-# ---------------------------------------------------------------------------- #
-#                                LÓGICA DE NEGÓCIO                             #
-# ---------------------------------------------------------------------------- #
+def download_video(url):
+    """Baixa vídeo da URL para temp"""
+    local_filename = os.path.join(TEMP_DIR, f"source_{uuid.uuid4()}.mp4")
+    logger.info(f"⬇️ Baixando vídeo: {url}")
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+    return local_filename
 
-def generate_script_logic(topic, duration_seconds):
-    """Gera roteiro (Síncrono/CPU Bound)."""
-    target_words = int(duration_seconds * 2.5)
-    logger.info(f"📝 Topic: {topic} | Duração: {duration_seconds}s | Alvo: {target_words} palavras")
+def detect_scenes(video_path, threshold=27.0):
+    """Usa PySceneDetect para encontrar cortes"""
+    logger.info("🔍 Detectando cenas...")
+    video_manager = VideoManager([video_path])
+    scene_manager = SceneManager()
+    scene_manager.add_detector(ContentDetector(threshold=threshold))
     
-    intro = f"Hoje vamos falar sobre {topic}. "
-    fillers = [
-        "Isso é algo que muda tudo.", "A ciência por trás disso é fascinante.",
-        f"Muitos não sabem a verdade sobre {topic}.", "Imagine as possibilidades.",
-        "Os detalhes são surpreendentes.", "Isso impacta nossa vida diariamente."
-    ]
+    video_manager.set_downscale_factor()
+    video_manager.start()
+    scene_manager.detect_scenes(frame_source=video_manager)
     
-    text = intro
-    while len(text.split()) < target_words:
-        text += random.choice(fillers) + " "
-        
-    words = text.split()[:target_words]
-    final_text = " ".join(words)
-    return final_text
+    scene_list = scene_manager.get_scene_list()
+    logger.info(f"✅ Encontradas {len(scene_list)} cenas.")
+    return scene_list
 
-async def generate_voice_pure_async(text, voice):
-    """Gera áudio MP3 (Edge TTS -> gTTS)."""
-    filename = f"audio_{int(time.time())}_{random.randint(1000,9999)}.mp3"
-    filepath = os.path.join(OUTPUT_DIR, filename)
+def process_anime_cuts(video_path, scene_list, min_duration=60, max_duration=180):
+    """Corta o vídeo nas cenas detectadas (Alvo: 60s a 180s)"""
+    clips_generated = []
     
     try:
-        logger.info(f"🎙️ Tentando Edge TTS ({voice})...")
-        communicate = edge_tts.Communicate(text, voice)
-        await communicate.save(filepath)
-    except Exception as e:
-        logger.warning(f"⚠️ Edge TTS falhou ({e}). Tentando fallback gTTS...")
-        try:
-            tts = gTTS(text=text, lang='pt')
-            tts.save(filepath)
-        except Exception as e_ft:
-            logger.error(f"❌ Falha total no áudio: {e_ft}")
-            raise e_ft
+        video = VideoFileClip(video_path)
+        
+        for i, scene in enumerate(scene_list):
+            start_time = scene[0].get_seconds()
+            end_time = scene[1].get_seconds()
+            duration = end_time - start_time
             
-    return filepath
-
-def generate_video_render(audio_path, topic):
-    """Renderiza MP4 (Síncrono/CPU Bound)."""
-    logger.info("🎬 Renderizando vídeo...")
-    filename = f"storyforge_{int(time.time())}_{random.randint(1000,9999)}.mp4"
-    output_path = os.path.join(OUTPUT_DIR, filename)
-    
-    if not os.path.exists(audio_path):
-        raise ValueError("Arquivo de áudio não encontrado")
-
-    audio = AudioFileClip(audio_path)
-    dur = audio.duration
-    
-    bg = ColorClip(size=(1080, 1920), color=(15, 20, 25), duration=dur)
-    
-    try:
-        font_name = 'DejaVu-Sans-Bold'
-    except:
-        font_name = 'Arial'
+            # Filtro de duração atualizado (60s - 180s)
+            if duration < min_duration or duration > max_duration:
+                continue
+                
+            logger.info(f"✂️ Processando Cena {i}: {duration:.1f}s")
+            
+            # Corta
+            clip = video.subclip(start_time, end_time)
+            
+            # Opcional: Resize para Vertical se não for (9:16)
+            # Para Anime, geralmente mantemos 16:9 ou fazemos crop. 
+            # Aqui mantemos original para qualidade máxima.
+            
+            output_filename = f"animecut_{uuid.uuid4()}_scene{i}.mp4"
+            output_path = os.path.join(OUTPUT_DIR, output_filename)
+            
+            clip.write_videofile(
+                output_path,
+                codec='libx264',
+                audio_codec='aac',
+                preset='fast',
+                logger=None
+            )
+            clips_generated.append(output_path)
+            
+            # Limite de segurança para não gerar 100 clips num job
+            if len(clips_generated) >= 5: 
+                break
+                
+        video.close()
+        return clips_generated
         
-    txt = TextClip(
-        topic.upper(), 
-        fontsize=80, 
-        color='white', 
-        font=font_name, 
-        size=(900, None), 
-        method='caption'
-    ).set_position('center').set_duration(dur)
-    
-    final = CompositeVideoClip([bg, txt]).set_audio(audio)
-    
-    final.write_videofile(
-        output_path, 
-        fps=24, 
-        codec='libx264', 
-        audio_codec='aac',
-        preset='ultrafast',
-        threads=4,
-        logger=None
-    )
-    
-    return output_path
-
-# ---------------------------------------------------------------------------- #
-#                                RUNPOD HANDLER                                #
-# ---------------------------------------------------------------------------- #
+    except Exception as e:
+        logger.error(f"❌ Erro no processamento de vídeo: {e}")
+        return []
 
 async def handler(job):
-    """
-    Handler com Upload B2 Integrado.
-    """
     job_input = job.get("input", {})
+    video_url = job_input.get("video_url")
+    min_dur = job_input.get("min_duration", 60) # Padrão atualizado para 60s
     
-    topic = job_input.get("topic", "Tecnologia")
-    duration = int(job_input.get("duration", 30))
-    voice = job_input.get("voice", "pt-BR-AntonioNeural")
+    if not video_url:
+        return {"status": "error", "error": "No video_url provided"}
     
     try:
-        logger.info(f"🚀 Job Start: {topic}")
+        # 1. Download
+        source_path = download_video(video_url)
         
-        # 1. Pipeline de Geração
-        script = generate_script_logic(topic, duration)
-        audio_path = await generate_voice_pure_async(script, voice)
-        video_path = generate_video_render(audio_path, topic)
+        # 2. Detecção
+        scenes = detect_scenes(source_path)
+        if not scenes:
+             return {"status": "error", "error": "No scenes detected"}
+             
+        # 3. Processamento & Corte
+        cut_paths = process_anime_cuts(source_path, scenes, min_duration=min_dur)
         
-        # 2. Upload para B2 (Seguro)
-        logger.info("☁️ Iniciando Upload Seguro para B2...")
-        file_name = f"storyforge/{os.path.basename(video_path)}"
+        # 4. Upload B2 (Multi-file)
+        results = []
+        for path in cut_paths:
+            file_name = f"animecut/{os.path.basename(path)}"
+            if b2_storage.upload_file(path, file_name):
+                url = b2_storage.generate_signed_download_url(file_name)
+                results.append(url)
         
-        # Upload
-        uploaded_key = b2_storage.upload_file(video_path, file_name)
+        # Limpeza
+        if os.path.exists(source_path): os.remove(source_path)
         
-        response_payload = {
+        return {
             "status": "success",
-            "script_word_count": len(script.split()),
-            "duration": duration
+            "total_scenes": len(scenes),
+            "generated_clips": len(results),
+            "download_urls": results
         }
 
-        if uploaded_key:
-            # Gerar Signed URL para acesso imediato (opcional, válido por 1h)
-            signed_url = b2_storage.generate_signed_download_url(uploaded_key, expires_in=3600)
-            
-            response_payload["b2_key"] = uploaded_key
-            response_payload["signed_url"] = signed_url
-            response_payload["video_path"] = signed_url # Para compatibilidade com frontend antigo
-            
-            logger.info(f"✅ B2 Upload Sucesso: {uploaded_key}")
-        else:
-            # Fallback: Retorna path local (se volume tiver montado)
-            logger.warning("⚠️ B2 Upload falhou. Retornando path local.")
-            response_payload["video_path"] = video_path
-
-        return response_payload
-        
     except Exception as e:
-        logger.error(f"❌ Erro Fatal no Job: {e}")
+        logger.error(f"❌ Erro Fatal: {e}")
         return {"status": "error", "error": str(e)}
 
 if __name__ == "__main__":
