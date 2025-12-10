@@ -6,19 +6,34 @@ ENV PYTHONPATH=/app
 
 WORKDIR /app
 
-# Dependências de sistema
+# ==========================================
+# SISTEMA - Dependências essenciais
+# ==========================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg imagemagick libsndfile1 git wget curl libgl1 \
+    ffmpeg \
+    imagemagick \
+    libsndfile1 \
+    git \
+    wget \
+    curl \
+    libgl1 \
+    fonts-dejavu-core \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Liberar ImageMagick (correção obrigatória)
 RUN sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
 
-# Install Requirements
-COPY requirements.serverless.txt /app/requirements.txt
+# ==========================================
+# PYTHON - Instala dependências do StoryForge
+# ==========================================
+COPY requirements.txt /app/requirements.txt
+
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
     python3 -m pip install --no-cache-dir --force-reinstall -r /app/requirements.txt
 
-# Copy App
+# ==========================================
+# APLICATIVO
+# ==========================================
 COPY . /app/
 
 RUN mkdir -p /app/output /app/temp
