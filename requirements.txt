@@ -1,4 +1,4 @@
-# 🔥 StoryForge AI Serverless v2.0 - Requirements
+ 🔥 StoryForge AI Serverless v2.0 - Requirements
 # Todas as dependências necessárias para funcionamento completo
 
 # ==================== RUNPOD ====================
