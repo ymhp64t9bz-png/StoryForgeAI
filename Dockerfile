@@ -1,42 +1,78 @@
-FROM runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04
+# 🔥 StoryForge AI Serverless v2.0 - Dockerfile
+# Imagem otimizada para RunPod Serverless
 
-ENV PYTHONDONTWRITEBYTECODE=1
+FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+
+# ==================== METADADOS ====================
+LABEL maintainer="StoryForge Team"
+LABEL description="StoryForge AI Serverless v2.0 - AI Video Generation with Ollama + Edge TTS"
+LABEL version="2.0"
+
+# ==================== VARIÁVEIS DE AMBIENTE ====================
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+ENV DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /app
+# Diretórios de trabalho
+ENV APP_DIR=/app
+ENV TEMP_DIR=/tmp/storyforge
+ENV OUTPUT_DIR=/tmp/storyforge/output
 
-# ==========================================
-# SISTEMA - Dependências essenciais
-# ==========================================
+# ==================== INSTALAÇÃO DE DEPENDÊNCIAS DO SISTEMA ====================
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # FFmpeg (essencial para MoviePy)
     ffmpeg \
+    # ImageMagick (para TextClip do MoviePy)
     imagemagick \
+    # OpenCV dependencies
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgl1 \
+    libglib2.0-0 \
+    # Audio processing
     libsndfile1 \
-    git \
+    # Networking
     wget \
     curl \
-    libgl1 \
+    git \
+    # Fonts (para legendas)
     fonts-dejavu-core \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    fonts-liberation \
+    fonts-freefont-ttf \
+    # Cleanup
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Liberar ImageMagick (correção obrigatória)
-RUN sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+# Configura política do ImageMagick para permitir conversão de texto
+RUN sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml || true
 
-# ==========================================
-# PYTHON - Instala dependências do StoryForge
-# ==========================================
-COPY requirements.txt /app/requirements.txt
+# ==================== CRIAR DIRETÓRIOS ====================
+WORKDIR $APP_DIR
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install --no-cache-dir --force-reinstall -r /app/requirements.txt
+RUN mkdir -p \
+    $TEMP_DIR \
+    $OUTPUT_DIR
 
-# ==========================================
-# APLICATIVO
-# ==========================================
-COPY . /app/
+# ==================== COPIAR REQUIREMENTS ====================
+COPY requirements.txt .
 
-RUN mkdir -p /app/output /app/temp
+# ==================== INSTALAR DEPENDÊNCIAS PYTHON ====================
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge
 
-CMD ["python3", "-u", "/app/handler.py"]
+# ==================== COPIAR CÓDIGO DA APLICAÇÃO ====================
+COPY handler.py /app/
+COPY b2_storage.py /app/
+
+# ==================== HEALTHCHECK ====================
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python3 -c "import runpod; print('OK')" || exit 1
+
+# ==================== EXPOR PORTA ====================
+EXPOSE 8000
+
+# ==================== COMANDO DE INICIALIZAÇÃO ====================
+CMD ["python3", "-u", "handler.py"]
 
