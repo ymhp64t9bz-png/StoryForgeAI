@@ -1,15 +1,47 @@
-runpod==1.4.0
-boto3==1.34.0
-b2sdk==1.24.0
-numpy==1.26.2
-moviepy==1.0.3
-Pillow==10.2.0
-imageio==2.31.1
-imageio-ffmpeg==0.4.9
-pydub==0.25.1
-gTTS==2.5.1
-requests==2.31.0
-python-dotenv==1.0.0
-python-slugify==8.0.1
-scenedetect[opencv]==0.6.2
-opencv-python-headless==4.8.1.78
+# 🔥 StoryForge AI Serverless v2.0 - Requirements
+# Todas as dependências necessárias para funcionamento completo
+
+# ==================== RUNPOD ====================
+runpod>=1.5.0
+
+# ==================== OLLAMA (LLM Local) ====================
+ollama>=0.1.0
+
+# ==================== TTS (Text-to-Speech) ====================
+edge-tts>=6.1.0
+gTTS>=2.4.0
+
+# ==================== VIDEO PROCESSING ====================
+moviepy>=1.0.3
+opencv-python-headless>=4.8.1.78
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.9
+
+# ==================== IMAGE PROCESSING (PIL) ====================
+Pillow>=10.1.0
+numpy>=1.24.0
+
+# ==================== AUDIO PROCESSING ====================
+pydub>=0.25.1
+soundfile>=0.12.1
+
+# ==================== BACKBLAZE B2 (S3 Compatible) ====================
+boto3>=1.29.0
+botocore>=1.32.0
+
+# ==================== HTTP & NETWORKING ====================
+requests>=2.31.0
+urllib3>=2.1.0
+
+# ==================== UTILITIES ====================
+tqdm>=4.66.0
+python-dotenv>=1.0.0
+colorama>=0.4.6
+
+# ==================== STABLE DIFFUSION (Opcional - para geração de imagens) ====================
+# diffusers>=0.25.0
+# transformers>=4.36.0
+# accelerate>=0.25.0
+
+# ==================== OUTROS ====================
+typing-extensions>=4.8.0
