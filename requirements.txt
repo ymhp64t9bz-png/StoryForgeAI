@@ -1,36 +1,15 @@
-# 🔥 StoryForge AI - Requirements Local
-# Este arquivo garante que o app rode no Windows sem erros.
-
-# Core Interface
-streamlit==1.29.0
-moviepy==1.0.3
-Pillow==10.2.0
-
-# AI Core (LLM)
-ollama==0.1.6
-
-# AI Audio (TTS & Processing)
-edge-tts>=6.1.10
-gTTS==2.5.1
-scipy==1.11.4
-soundfile==0.12.1
-pydub==0.25.1
-
-# Fixes Críticos (Windows/Async)
-nest_asyncio==1.5.8
-
-# AI Vision (Opcional se tiver GPU)
-diffusers==0.24.0
-transformers==4.36.2
-accelerate==0.25.0
-# torch é instalado manualmente dependendo da CUDA user settings
-
-# Storage & Cloud
+runpod==1.4.0
 boto3==1.34.0
 b2sdk==1.24.0
-
-# Utilities
-python-dotenv==1.0.0
+numpy==1.26.2
+moviepy==1.0.3
+Pillow==10.2.0
+imageio==2.31.1
+imageio-ffmpeg==0.4.9
+pydub==0.25.1
+gTTS==2.5.1
 requests==2.31.0
-numpy==1.24.3
+python-dotenv==1.0.0
 python-slugify==8.0.1
+scenedetect[opencv]==0.6.2
+opencv-python-headless==4.8.1.78
