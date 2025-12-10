@@ -22,10 +22,10 @@ OUT_DIR = "/app/output"
 os.makedirs(TEMP_DIR, exist_ok=True)
 os.makedirs(OUT_DIR, exist_ok=True)
 
-B2_ENDPOINT = os.getenv("B2_ENDPOINT_URL", "https://s3.us-east-005.backblazeb2.com")
-B2_BUCKET = os.getenv("B2_BUCKET_NAME")
-B2_KEY = os.getenv("B2_KEY_ID")
-B2_SECRET = os.getenv("B2_APPLICATION_KEY")
+B2_ENDPOINT = os.getenv("s3.us-east-005.backblazeb2.com", "https://s3.us-east-005.backblazeb2.com")
+B2_BUCKET = os.getenv("KortexClipAI")
+B2_KEY = os.getenv("68702c2cbfc6")
+B2_SECRET = os.getenv("00506496bc1450b6722b672d9a43d00605f17eadd7")
 
 
 # ============================
@@ -192,3 +192,4 @@ async def handler(job):
 # ============================
 if __name__ == "__main__":
     runpod.serverless.start({"handler": handler})
+
