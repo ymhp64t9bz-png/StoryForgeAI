@@ -10,17 +10,8 @@ tiktoken>=0.5.0
 numba
 
 # ==================== AI - TEXT TO SPEECH ====================
-# Bark TTS (instalado no volume)
-# edge-tts (alternativa leve)
 edge-tts>=6.1.0
 gtts>=2.5.0
-
-# ==================== AI - IMAGE GENERATION ====================
-diffusers>=0.36.0
-transformers>=4.57.0
-accelerate>=0.26.0
-safetensors>=0.4.0
-torch>=2.0.0
 
 # ==================== VIDEO PROCESSING ====================
 moviepy==1.0.3
@@ -39,7 +30,6 @@ numpy==1.26.4
 pydub>=0.25.1
 soundfile>=0.12.1
 scipy>=1.10.0
-librosa>=0.10.0
 
 # ==================== BACKBLAZE B2 (S3 Compatible) ====================
 boto3>=1.29.0
