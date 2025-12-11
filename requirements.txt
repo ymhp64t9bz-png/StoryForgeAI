@@ -19,6 +19,7 @@ opencv-python-headless==4.8.1.78
 pydub>=0.25.1
 soundfile>=0.12.1
 edge-tts>=6.1.0
+gtts>=2.5.0 
 
 # ==================== BACKBLAZE B2 ====================
 boto3>=1.29.0
@@ -26,3 +27,4 @@ boto3>=1.29.0
 # ==================== UTILITIES ====================
 requests>=2.31.0
 tqdm>=4.66.0
+
