@@ -1,50 +1,10 @@
-# 📖 StoryForge AI - Requirements
-# Dependências para geração de histórias virais com IA
-
-# ==================== RUNPOD ====================
-runpod>=1.5.0
-
-# ==================== AI - WHISPER (Transcrição) ====================
-openai-whisper>=20231117
-# Dependências do Whisper
-tiktoken>=0.5.0
-numba
-
-# ==================== AI - LLAMA CPP (Qwen 2.5) ====================
-# Será instalado separadamente no Dockerfile com CMAKE_ARGS
-
-# ==================== VIDEO PROCESSING ====================
+runpod==1.3.0
 moviepy==1.0.3
-opencv-python-headless==4.10.0.84
-imageio==2.34.0
-imageio-ffmpeg==0.5.1
-decorator==5.1.1
-proglog==0.1.10
-# Dependências adicionais do MoviePy
-ffmpeg-python==0.2.0
-
-# ==================== IMAGE PROCESSING (PIL) ====================
-Pillow>=10.1.0
-numpy==1.26.4
-
-# ==================== AUDIO PROCESSING ====================
-pydub>=0.25.1
-soundfile>=0.12.1
-
-# ==================== BACKBLAZE B2 (S3 Compatible) ====================
-boto3>=1.29.0
-botocore>=1.32.0
-
-# ==================== HTTP & NETWORKING ====================
-requests>=2.31.0
-urllib3>=2.1.0
-
-# ==================== UTILITIES ====================
-tqdm>=4.66.0
-python-dotenv>=1.0.0
-colorama>=0.4.6
-typing-extensions>=4.8.0
-
-# ==================== PROGBAR ====================
-proglog>=0.1.10
-
+imageio==2.33.1
+imageio-ffmpeg==0.4.9
+edge-tts==6.1.9
+scipy==1.11.4
+soundfile==0.12.1
+numpy==1.26.2
+aiofiles==23.2.1
+pillow==10.2.0
