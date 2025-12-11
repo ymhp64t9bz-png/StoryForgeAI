@@ -1,369 +1,192 @@
-# 🔥 StoryForge AI Serverless v2.0 - Documentação Completa
+# 🔥 StoryForge AI Serverless
 
-## 🎯 Visão Geral
-
-O **StoryForge AI Serverless v2.0** é a implementação **COMPLETA** de todas as funcionalidades do StoryForge AI local, otimizada para rodar no RunPod Serverless. Este sistema agora possui **TODAS** as capacidades da versão local, incluindo:
+Geração automática de vídeos curtos com IA para RunPod Serverless.
 
 ---
 
-## ✅ Funcionalidades Implementadas
+## 📁 Arquivos
 
-### 🤖 **1. Geração de Scripts com IA (Ollama)**
-
-#### **Modelos Suportados**
-- ✅ Llama 3.1 8B (recomendado)
-- ✅ Llama 3.2 3B (mais rápido)
-- ✅ DeepSeek R1 8B
-- ✅ Mistral 7B
-- ✅ Qualquer modelo Ollama
-
-#### **Funcionalidades**
-- ✅ **Geração automática de roteiros** baseados em tópico
-- ✅ **Cálculo matemático preciso** de palavras (2.5 palavras/segundo)
-- ✅ **Divisão em cenas** com descrições visuais detalhadas
-- ✅ **Múltiplos estilos** (viral, educativo, engraçado, motivacional)
-- ✅ **Otimização por plataforma** (TikTok, YouTube, Instagram, Kwai)
-- ✅ **Fallback inteligente** se IA falhar
-
----
-
-### 🎙️ **2. Síntese de Voz (TTS)**
-
-#### **Edge TTS (Principal)**
-- ✅ **Vozes neurais de alta qualidade**
-- ✅ **Múltiplas vozes** em português e inglês
-- ✅ **Execução assíncrona** otimizada
-
-#### **Vozes Disponíveis**
-- `pt-BR-AntonioNeural` - Masculino (Padrão)
-- `pt-BR-FranciscaNeural` - Feminino
-- `pt-BR-ThalitaNeural` - Feminino Jovem
-- `en-US-ChristopherNeural` - Inglês Masculino
-- `en-US-AriaNeural` - Inglês Feminino
-
-#### **Fallback gTTS**
-- ✅ **Ativação automática** se Edge TTS falhar
-- ✅ **Sem interrupção** do fluxo de trabalho
-
----
-
-### 🎬 **3. Composição de Vídeo (MoviePy)**
-
-#### **Renderização Profissional**
-- ✅ **Formato 9:16 vertical** (1080x1920)
-- ✅ **Codec H.264** (libx264)
-- ✅ **Audio AAC** de alta qualidade
-- ✅ **FPS 30** para suavidade
-- ✅ **Preset ultrafast** para velocidade
-
-#### **Recursos Visuais**
-- ✅ **Múltiplos estilos** predefinidos
-- ✅ **Legendas dinâmicas** sincronizadas
-- ✅ **Transições suaves** (fade in/out)
-- ✅ **Fundo customizável** (cor sólida ou imagens)
-
----
-
-### 🎨 **4. Estilos Visuais**
-
-#### **AutoShorts V2** (Padrão)
-```json
-{
-  "font": "Arial-Bold",
-  "font_size": 70,
-  "color": "white",
-  "stroke_color": "black",
-  "stroke_width": 3,
-  "position": "center",
-  "bg_color": "#000000"
-}
 ```
-
-#### **Livro Infantil**
-```json
-{
-  "font": "Comic-Sans-MS-Bold",
-  "font_size": 60,
-  "color": "yellow",
-  "stroke_color": "purple",
-  "stroke_width": 4,
-  "position": "bottom",
-  "bg_color": "#FFE4E1"
-}
-```
-
-#### **GTAV**
-```json
-{
-  "font": "Impact",
-  "font_size": 80,
-  "color": "white",
-  "stroke_color": "black",
-  "stroke_width": 5,
-  "position": "top",
-  "bg_color": "#1a1a1a"
-}
-```
-
-#### **Minimal**
-```json
-{
-  "font": "Arial",
-  "font_size": 50,
-  "color": "white",
-  "stroke_color": null,
-  "stroke_width": 0,
-  "position": "bottom",
-  "bg_color": "#000000"
-}
+StoryForgeAI/
+├── Dockerfile          # Build sem HEALTHCHECK (corrigido)
+├── handler.py          # Handler completo com todas funcionalidades
+└── requirements.txt    # Dependências (com gtts)
 ```
 
 ---
 
-### ☁️ **5. Integração com Backblaze B2**
+## 🚀 Deploy no RunPod
 
-#### **Upload Automático**
-- ✅ **Upload de vídeos processados** para B2
-- ✅ **Geração de Signed URLs** (válidas por 7 dias)
-- ✅ **Organização em pastas** (`storyforge/`)
-- ✅ **Nomes únicos** com timestamp + random
+### 1. Criar Repositório no GitHub
 
-#### **Benefícios**
-- ✅ **Armazenamento ilimitado** (pago por uso)
-- ✅ **URLs públicas** para compartilhamento
-- ✅ **Backup automático** de todos os vídeos
+Se ainda não existe, crie um repositório:
+- Nome: `StoryForgeAI`
+- Visibilidade: Public ou Private
+
+### 2. Fazer Upload dos Arquivos
+
+**Opção A: Via GitHub Web Interface**
+1. Acesse: https://github.com/ymhp64t9bz-png/StoryForgeAI
+2. Upload os 3 arquivos:
+   - `Dockerfile`
+   - `handler.py`
+   - `requirements.txt`
+
+**Opção B: Via Git (se for repositório local)**
+```bash
+cd "C:\Users\Alec Guimel\.gemini\antigravity\scratch\autoshorts-clone\deploy_cloud\StoryForgeAI"
+git init
+git add .
+git commit -m "Initial commit: StoryForge AI Serverless"
+git remote add origin https://github.com/ymhp64t9bz-png/StoryForgeAI.git
+git push -u origin main
+```
+
+### 3. Configurar Endpoint no RunPod
+
+1. **RunPod Console** → **Serverless** → **New Endpoint**
+2. **Configurações:**
+   - **Name:** StoryForgeAI
+   - **Repository:** `https://github.com/ymhp64t9bz-png/StoryForgeAI.git`
+   - **Branch:** `main`
+   - **Dockerfile Path:** `Dockerfile`
+   - **Container Disk:** 10 GB
+   - **GPU:** RTX 3090 ou similar
+
+3. **Environment Variables** (opcional):
+   ```
+   B2_KEY_ID=your_key_id
+   B2_APP_KEY=your_app_key
+   B2_BUCKET_NAME=your_bucket_name
+   B2_ENDPOINT=https://s3.us-east-005.backblazeb2.com
+   ```
+
+4. **Deploy**
 
 ---
 
-### 🧹 **6. Gerenciamento de Memória**
+## 🧪 Testar
 
-#### **Limpeza Automática**
-- ✅ **Limpeza de RAM** após processamento
-- ✅ **Remoção de arquivos temporários**
-- ✅ **Liberação de recursos** do MoviePy
-
----
-
-## 📋 Formato de Input
-
-### *são
-
-O **StoryForge AI Serverless v2.0** agora possui **100% das funcionalidades** da versão local, incluindo:
-
-1. ✅ **Geração de scripts com Ollama**
-2. ✅ **Síntese de voz com Edge TTS/gTTS**
-3. ✅ **Composição de vídeo com MoviePy**
-4. ✅ **Múltiplos estilos visuais**
-5. ✅ **Legendas dinâmicas**
-6. ✅ **Upload automático para B2**
-7. ✅ **Gerenciamento de memória otimizado**
-
-**O sistema está pronto para produção!** 🚀
-*Exemplo Completo**
-
+### Teste Básico
 ```json
 {
   "input": {
-    "topic": "5 dicas de produtividade para estudantes",
-    "duration": 60,
-    "style": "viral",
-    "platform": "tiktok",
-    "voice": "pt-BR-AntonioNeural",
-    "video_style": "autoshorts_v2",
-    "model": "llama3.1:8b",
-    "use_images": false
+    "mode": "test"
   }
 }
 ```
 
-### **Parâmetros**
-
-| Parâmetro | Tipo | Padrão | Descrição |
-|-----------|------|--------|-----------|
-| `topic` | string | "Tecnologia" | Tópico do vídeo |
-| `duration` | int | 60 | Duração em segundos (15-180) |
-| `style` | string | "viral" | Estilo do script |
-| `platform` | string | "tiktok" | Plataforma de destino |
-| `voice` | string | "pt-BR-AntonioNeural" | Voz do narrador |
-| `video_style` | string | "autoshorts_v2" | Estilo visual |
-| `model` | string | "llama3.1:8b" | Modelo Ollama |
-| `use_images` | bool | false | Gerar imagens (futuro) |
-
----
-
-## 📤 Formato de Output
-
-### **Sucesso**
-
+**Resposta esperada:**
 ```json
 {
   "status": "success",
-  "script": {
-    "titulo": "5 Dicas Incríveis de Produtividade!",
-    "script": "Texto completo do roteiro...",
-    "cenas": [
-      {
-        "visual": "Cinematic shot of student studying, 8k",
-        "narração": "Primeira dica..."
-      }
-    ]
-  },
-  "video_url": "https://s3.us-east-005.backblazeb2.com/...",
-  "b2_key": "storyforge/video_123456.mp4",
-  "duration": 60,
-  "word_count": 150
+  "message": "StoryForge AI worker funcionando!",
+  "version": "2.0",
+  "features": {
+    "moviepy": true,
+    "pil": true,
+    "edge_tts": false,
+    "gtts": true,
+    "b2": true
+  }
 }
 ```
 
-### **Erro**
-
+### Gerar Vídeo com Tópico
 ```json
 {
-  "status": "error",
-  "error": "Descrição do erro",
-  "traceback": "Stack trace completo..."
+  "input": {
+    "topic": "Inteligência Artificial",
+    "style": "viral",
+    "duration": 60,
+    "num_images": 3
+  }
+}
+```
+
+### Gerar Vídeo com Script Customizado
+```json
+{
+  "input": {
+    "script": "Olá! Este é meu script personalizado sobre tecnologia...",
+    "title": "Tecnologia do Futuro",
+    "style": "educational",
+    "num_images": 5
+  }
 }
 ```
 
 ---
 
-## 🚀 Fluxo de Processamento
+## 🎯 Funcionalidades
 
-### **Pipeline Completo**
+### ✅ Geração de Script
+- 3 estilos: `viral`, `educational`, `story`
+- Templates baseados no StoryForge local
+- Inclui título, script, hashtags e CTA
 
-```
-1. Recebe input do usuário
-   ↓
-2. Gera script com Ollama
-   a. Calcula palavras necessárias (duração * 2.5)
-   b. Divide em cenas
-   c. Cria descrições visuais
-   ↓
-3. Gera áudio com Edge TTS
-   a. Tenta Edge TTS (assíncrono)
-   b. Fallback para gTTS se falhar
-   ↓
-4. Compõe vídeo com MoviePy
-   a. Cria clipes de imagem/cor
-   b. Adiciona legendas dinâmicas
-   c. Sincroniza com áudio
-   d. Renderiza em MP4
-   ↓
-5. Upload para Backblaze B2
-   a. Envia vídeo para bucket
-   b. Gera signed URL
-   ↓
-6. Limpa recursos
-   a. Remove arquivos temporários
-   b. Libera memória
-   ↓
-7. Retorna resultado
-```
+### ✅ Geração de Áudio
+- **gTTS** (Google Text-to-Speech)
+- **Edge-TTS** (suporte futuro)
+- Múltiplas vozes e idiomas
+
+### ✅ Geração de Imagens
+- Imagens placeholder coloridas
+- Gradientes visuais
+- Texto sobreposto
+
+### ✅ Composição de Vídeo
+- Concatenação de imagens com timing
+- Fade in/out entre transições
+- Título sobreposto com borda
+- Áudio sincronizado
+- Resolução 1080x1920 (vertical)
+
+### ✅ Upload para B2
+- Upload automático
+- URLs assinadas (1h de validade)
 
 ---
 
-## ⚙️ Variáveis de Ambiente Necessárias
+## 📊 Parâmetros de Input
 
-```bash
-# Backblaze B2
-B2_KEY_ID=68702c2cbfc6
-B2_APP_KEY=00506496bc1450b6722b672d9a43d00605f17eadd7
-B2_ENDPOINT=https://s3.us-east-005.backblazeb2.com
-B2_BUCKET_NAME=autocortes-storage
+| Parâmetro | Tipo | Obrigatório | Padrão | Descrição |
+|-----------|------|-------------|--------|-----------|
+| `mode` | string | Não | - | "test" para teste de saúde |
+| `topic` | string | Sim* | - | Tópico do vídeo |
+| `script` | string | Sim* | - | Script customizado |
+| `title` | string | Não | Auto | Título do vídeo |
+| `style` | string | Não | "viral" | Estilo: viral, educational, story |
+| `duration` | int | Não | 60 | Duração alvo em segundos |
+| `num_images` | int | Não | 3 | Número de imagens |
 
-# Ollama (se não estiver no mesmo container)
-OLLAMA_HOST=http://localhost:11434
-```
-
----
-
-## 📊 Performance Esperada
-
-### **Tempo de Processamento**
-
-| Etapa | Tempo Médio |
-|-------|-------------|
-| Geração de Script (Ollama) | 10-30s |
-| Síntese de Voz (Edge TTS) | 5-15s |
-| Composição de Vídeo (MoviePy) | 20-60s |
-| Upload B2 | 10-30s |
-| **Total** | **45-135s** |
-
-### **Recursos Utilizados**
-
-- **RAM:** 2-4 GB
-- **CPU:** 2-4 cores
-- **Disco:** 500 MB temporário
-- **Rede:** 10-50 MB upload
+*Pelo menos `topic` ou `script` deve ser fornecido.
 
 ---
 
-## 🔍 Debugging e Logs
+## 🔧 Troubleshooting
 
-O sistema possui **logging detalhado** em todas as etapas:
+### Worker dá exit code 1
+- ✅ **Solução:** Dockerfile sem HEALTHCHECK (já corrigido)
 
-```
-[INFO] ============================================================
-[INFO] 🔥 StoryForge AI Serverless v2.0 - Iniciando
-[INFO] 📺 Tópico: 5 dicas de produtividade
-[INFO] ⏱️ Duração: 60s
-[INFO] 🎨 Estilo: autoshorts_v2
-[INFO] ============================================================
-[INFO] 📝 Passo 1/3: Gerando script...
-[INFO] 🤖 Gerando script com Ollama (llama3.1:8b)...
-[INFO] ✅ Script gerado com sucesso
-[INFO] 🎙️ Passo 2/3: Gerando áudio...
-[INFO] 🎙️ Tentando Edge TTS (pt-BR-AntonioNeural)...
-[INFO] ✅ Edge TTS sucesso
-[INFO] 🎬 Passo 3/3: Gerando vídeo...
-[INFO] 🎬 Gerando vídeo com MoviePy...
-[INFO] ✅ Vídeo gerado: /tmp/storyforge/output/video_123.mp4
-[INFO] ☁️ Fazendo upload para B2...
-[INFO] 📤 Uploading para B2: storyforge/video_123.mp4
-[INFO] ✅ Upload completo
-[INFO] 🧹 Memória limpa
-[INFO] ============================================================
-[INFO] ✅ StoryForge AI Serverless - Concluído
-[INFO] ============================================================
-```
+### Erro "gTTS não disponível"
+- ✅ **Solução:** `gtts>=2.5.0` adicionado ao requirements.txt
+
+### Upload B2 falha
+- Verifique as env vars: `B2_KEY_ID`, `B2_APP_KEY`, `B2_BUCKET_NAME`
 
 ---
 
-## ✅ Checklist de Funcionalidades
+## 📝 Changelog
 
-### **Geração de Conteúdo**
-- [x] Geração de scripts com Ollama
-- [x] Múltiplos modelos LLM
-- [x] Cálculo matemático de palavras
-- [x] Divisão em cenas
-- [x] Descrições visuais detalhadas
-- [x] Fallback inteligente
-
-### **Síntese de Voz**
-- [x] Edge TTS (principal)
-- [x] gTTS (fallback)
-- [x] Múltiplas vozes
-- [x] Execução assíncrona
-
-### **Processamento de Vídeo**
-- [x] Composição com MoviePy
-- [x] Formato 9:16 vertical
-- [x] Legendas dinâmicas
-- [x] Múltiplos estilos visuais
-- [x] Transições suaves
-- [x] Renderização otimizada
-
-### **Storage e Upload**
-- [x] Upload para Backblaze B2
-- [x] Signed URLs (7 dias)
-- [x] Organização em pastas
-
-### **Gerenciamento de Recursos**
-- [x] Limpeza de RAM
-- [x] Remoção de temporários
-- [x] Logging detalhado
+### v2.0 (2024-12-11)
+- ✅ Removido HEALTHCHECK que causava crash
+- ✅ Adicionado gtts ao requirements.txt
+- ✅ Handler completo com todas funcionalidades
+- ✅ Geração de script com templates
+- ✅ Composição de vídeo com título e transições
+- ✅ Upload automático para B2
 
 ---
 
-## 🎉 Concluido
-
+**Desenvolvido para RunPod Serverless** 🚀
